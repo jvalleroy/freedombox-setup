@@ -1,0 +1,126 @@
+#!/bin/sh
+#
+# ikiwiki configuration and setup automators
+
+apt-get install -y ikiwiki pwauth libapache2-mod-authnz-external
+
+# ikiwiki_auth is linked to ikiwiki, but will be setup to require authentication.
+mkdir -p /var/www/ikiwiki
+if [ ! -h /var/www/ikiwiki_auth ]; then
+    ln -s /var/www/ikiwiki /var/www/ikiwiki_auth
+fi
+
+# Apache configuration
+a2enmod cgi
+a2enmod authnz_external
+
+cat > /etc/apache2/conf-available/ikiwiki.conf <<'EOF'
+Alias /ikiwiki /var/www/ikiwiki
+Alias /ikiwiki_auth /var/www/ikiwiki_auth
+AddHandler cgi-script .cgi
+DefineExternalAuth pwauth pipe /usr/sbin/pwauth
+
+<Directory /var/www/ikiwiki>
+    Options +ExecCGI
+</Directory>
+
+<Directory /var/www/ikiwiki_auth>
+    Options +ExecCGI +FollowSymLinks
+
+    AuthType Basic
+    AuthName "Authentication Required"
+    AuthBasicProvider external
+    AuthExternal pwauth
+    require valid-user
+</Directory>
+EOF
+
+a2enconf ikiwiki
+
+# Wiki setup automator for FreedomBox
+cat > /etc/ikiwiki/freedombox.setup <<'EOF'
+#!/usr/bin/perl
+# Ikiwiki setup automator for FreedomBox.
+#
+# This setup file causes ikiwiki to create a wiki, check it into revision
+# control, generate a setup file for the new wiki, and set everything up.
+#
+# Just run: ikiwiki -setup /etc/ikiwiki/freedombox.setup wiki_name
+
+require IkiWiki::Setup::Automator;
+
+our $wikiname=$ARGV[0];
+if ($wikiname eq "") {
+	print "\nUsage: ikiwiki -setup /etc/ikiwiki/freedombox.setup wiki_name\n";
+	exit;
+}
+
+our $wikiname_short=IkiWiki::Setup::Automator::sanitize_wikiname($wikiname);
+
+IkiWiki::Setup::Automator->import(
+	wikiname => $wikiname,
+	rcs => "git",
+	srcdir => "/var/ikiwiki/$wikiname_short",
+	destdir => "/var/www/ikiwiki/$wikiname_short",
+	repository => "/var/ikiwiki/$wikiname_short.git",
+	dumpsetup => "/var/ikiwiki/$wikiname_short.setup",
+	url => "/ikiwiki/$wikiname_short",
+	cgiurl => "/ikiwiki/$wikiname_short/ikiwiki.cgi",
+	cgiauthurl => "/ikiwiki_auth/$wikiname_short/ikiwiki.cgi",
+	cgi_wrapper => "/var/www/ikiwiki/$wikiname_short/ikiwiki.cgi",
+	add_plugins => [qw{goodstuff websetup httpauth}],
+	disable_plugins => [qw{passwordauth}],
+	rss => 1,
+	atom => 1,
+	syslog => 1,
+)
+EOF
+
+# Blog setup automator for FreedomBox
+cat > /etc/ikiwiki/freedombox-blog.setup <<'EOF'
+#!/usr/bin/perl
+# Ikiwiki setup automator for FreedomBox -- blog version.
+#
+# This setup file causes ikiwiki to create a wiki, containing a blog,
+# check it into revision control, generate a setup file for the new
+# wiki, and set everything up.
+#
+# Just run: ikiwiki -setup /etc/ikiwiki/freedombox-blog.setup blog_name
+
+require IkiWiki::Setup::Automator;
+
+our $wikiname=$ARGV[0];
+if ($wikiname eq "") {
+	print "\nUsage: ikiwiki -setup /etc/ikiwiki/freedombox-blog.setup blog_name\n";
+	exit;
+}
+
+our $wikiname_short=IkiWiki::Setup::Automator::sanitize_wikiname($wikiname);
+
+IkiWiki::Setup::Automator->import(
+	wikiname => $wikiname,
+	rcs => "git",
+	srcdir => "/var/ikiwiki/$wikiname_short",
+	destdir => "/var/www/ikiwiki/$wikiname_short",
+	repository => "/var/ikiwiki/$wikiname_short.git",
+	dumpsetup => "/var/ikiwiki/$wikiname_short.setup",
+	url => "/ikiwiki/$wikiname_short",
+	cgiurl => "/ikiwiki/$wikiname_short/ikiwiki.cgi",
+	cgiauthurl => "/ikiwiki_auth/$wikiname_short/ikiwiki.cgi",
+	cgi_wrapper => "/var/www/ikiwiki/$wikiname_short/ikiwiki.cgi",
+	add_plugins => [qw{goodstuff websetup comments blogspam calendar sidebar trail httpauth}],
+	disable_plugins => [qw{passwordauth}],
+	rss => 1,
+	atom => 1,
+	syslog => 1,
+
+	example => "blog",
+	comments_pagespec => "posts/* and !*/Discussion",
+	blogspam_pagespec => "postcomment(*)",
+	archive_pagespec => "page(posts/*) and !*/Discussion",
+	global_sidebars => 0,
+	discussion => 0,
+	locked_pages => "* and !postcomment(*)",
+	tagbase => "tags",
+)
+EOF

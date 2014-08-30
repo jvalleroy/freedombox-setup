@@ -42,6 +42,11 @@ cat > /etc/apache2/sites-available/fbx.conf <<'EOF'
   ReWriteCond %{REQUEST_URI} ^/plinth
   ReWriteCond %{SERVER_PORT} !^443$
   RewriteRule ^/(.*) https://%{HTTP_HOST}/$1 [NC,R,L]
+
+  ## Require HTTPS for ikiwiki.
+  ReWriteCond %{REQUEST_URI} ^/ikiwiki
+  ReWriteCond %{SERVER_PORT} !^443$
+  RewriteRule ^/(.*) https://%{HTTP_HOST}/$1 [NC,R,L]
 </VirtualHost>
 EOF
 
