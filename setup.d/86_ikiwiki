@@ -1,19 +1,29 @@
 #!/bin/sh
 #
-# ikiwiki configuration and setup automators
+# ikiwiki configuration for FreedomBox
 
+
+# Using pwauth to authenticate unix users.
+# Alternatives would be authentication by group, or using LDAP.
 apt-get install -y ikiwiki pwauth libapache2-mod-authnz-external
 
-# ikiwiki_auth is linked to ikiwiki, but will be setup to require authentication.
+
+# When authentication is required, ikiwiki will redirect to /ikiwiki_auth which
+# is symlinked to /ikiwiki. This allows wiki pages to be viewed publically,
+# while authentication is only required for editing.
 mkdir -p /var/www/ikiwiki
 if [ ! -h /var/www/ikiwiki_auth ]; then
     ln -s /var/www/ikiwiki /var/www/ikiwiki_auth
 fi
 
-# Apache configuration
+
+# enable apache modules
 a2enmod cgi
 a2enmod authnz_external
 
+
+# Setup apache configuration for ikiwiki.
+# Currently, any valid unix user will be able to edit the wiki.
 cat > /etc/apache2/conf-available/ikiwiki.conf <<'EOF'
 Alias /ikiwiki /var/www/ikiwiki
 Alias /ikiwiki_auth /var/www/ikiwiki_auth
@@ -37,7 +47,19 @@ EOF
 
 a2enconf ikiwiki
 
-# Wiki setup automator for FreedomBox
+
+# Setup automators used when creating a wiki or blog.
+# These are based on the automators that are part of the ikiwiki package.
+
+# They have been modified so no user input is required. Instead, the
+# wiki name is given as an argument.
+
+# The wiki source is stored under /var/ikiwiki, and the generated html will be
+# served from /var/www/ikiwiki.
+
+# The httpauth plugin is enabled to allow HTTP basic authentication.
+# The passwordauth plugin is disabled so new account regisration is disabled.
+
 cat > /etc/ikiwiki/freedombox.setup <<'EOF'
 #!/usr/bin/perl
 # Ikiwiki setup automator for FreedomBox.
@@ -76,7 +98,6 @@ IkiWiki::Setup::Automator->import(
 )
 EOF
 
-# Blog setup automator for FreedomBox
 cat > /etc/ikiwiki/freedombox-blog.setup <<'EOF'
 #!/usr/bin/perl
 # Ikiwiki setup automator for FreedomBox -- blog version.
