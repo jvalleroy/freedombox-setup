@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# Adding these ports can prevent Tor from running if the interface is removed or
+# changes IP. Disable for now.
+echo warning: Skip configuring Tor ports on additional network interfaces.
+exit 0
+
 # Enable SOCKS and transparent proxy on each configured network interface.
 ips=$(ip -4 -o addr | awk '!/^[0-9]*: ?lo|link\/ether/ {gsub("/", " "); print $4}')
 for ip in $ips
