@@ -14,7 +14,6 @@ else
     IFACES_FILE=/etc/network/interfaces
 fi
 
-MACHINE_DETECT="machine-detect"
 INTERFACE_DETECT="interface-detect"
 
 function get-wired-interfaces {
@@ -22,12 +21,6 @@ function get-wired-interfaces {
 
     WIRED_IFACES=`$INTERFACE_DETECT | grep "wired" \
         | grep "^[^l][^o]"`
-}
-
-function get-wireless-interfaces {
-    # set WIRELESS_IFACES to list of wireless interfaces.
-
-    WIRELESS_IFACES=`$INTERFACE_DETECT | grep "wireless"`
 }
 
 function remove-udev {
@@ -105,55 +98,6 @@ auto eth1
 EOF
 }
 
-function interfaces-uap0 {
-    # add uap0 to interfaces file
-
-    cat >> $IFACES_FILE <<EOF
-# The wireless network interface
-# creates a new wireless network.
-auto uap0
-    iface uap0 inet static
-    address 192.168.2.1
-    netmask 255.255.255.0
-    hostapd /etc/hostapd/fbx-uap0.conf
-
-    # using hostapd instead of uaputl to configure AP
-    #post-up uaputl sys_cfg_ssid "freedombox"
-    #post-up uaputl sys_cfg_protocol 32  # WPA2
-    #post-up uaputl sys_cfg_wpa_passphrase "freedombox123"
-    #post-up uaputl sys_cfg_cipher 8 8   # AES CCMP
-    #post-up uaputl bss_start
-
-    #iface uap0 inet6 static
-    #address 2002:c0a8:0201::1
-    #netmask 64
-    # uap0: hwaddress ether 00:00:00:00:00:02
-
-EOF
-
-
-    # wifi AP setup
-    cat > /etc/hostapd/fbx-uap0.conf <<EOF
-interface=uap0
-driver=nl80211
-ssid=freedombox
-hw_mode=g
-channel=1
-
-# accept any MAC not in deny list
-macaddr_acl=0
-
-# enable ssid broadcast
-ignore_broadcast_ssid=0
-
-# wpa2
-wpa=2
-wpa_passphrase=freedombox123
-wpa_key_mgmt=WPA-PSK
-rsn_pairwise=CCMP
-EOF
-}
-
 function default-setup {
     # normal, shared setup for all devices.
 
@@ -221,7 +165,6 @@ function generate_dummy_mac {
 
 echo "Setting up network configuration..."
 get-wired-interfaces
-get-wireless-interfaces
 
 # count wired interfaces
 case `echo $WIRED_IFACES | wc -w` in
@@ -234,12 +177,6 @@ case `echo $WIRED_IFACES | wc -w` in
     "0")
         zero-wired-setup
 esac
-
-# setup wifi AP on Dreamplug
-. "$MACHINE_DETECT"
-if [ "$MACHINE" == "dreamplug" ] || [ "$WIRELESS_IFACES" == *"mlan0"* ]; then
-    interfaces-uap0
-fi
 
 update-null-macs
 
