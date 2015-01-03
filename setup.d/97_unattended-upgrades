@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# Activate unattended-upgrades.
+cat > /etc/apt/apt.conf.d/20auto-upgrades <<EOF
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+EOF
+
+if ! grep -q '"origin=Debian";' /etc/apt/apt.conf.d/50unattended-upgrades ; then
+    sed -i '/Unattended-Upgrade::Origins-Pattern {/a \
+        "origin=Debian";' /etc/apt/apt.conf.d/50unattended-upgrades
+fi
