@@ -61,6 +61,7 @@ wpa_passphrase=freedombox123
 wpa_key_mgmt=WPA-PSK
 rsn_pairwise=CCMP
 EOF
+    chmod 660 /etc/hostapd/fbx-uap0.conf
 
     echo "Creating uap0 interface..."
     iw phy phy0 interface add uap0 type __ap
