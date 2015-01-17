@@ -6,12 +6,22 @@
 #
 # First parameter is the path to the network interface file to
 # configure.
+#
+# Second parameter is the path to the directory that will store
+# separate configuration files for each network interface.
 
 if [ -n "$1" ]
 then
     IFACES_FILE=$1
 else
     IFACES_FILE=/etc/network/interfaces
+fi
+
+if [ -n "$2" ]
+then
+    IFACES_DIR=$2
+else
+    IFACES_DIR=/etc/network/interfaces.d
 fi
 
 INTERFACE_DETECT="interface-detect"
@@ -52,6 +62,10 @@ function interfaces-start {
     cat > $IFACES_FILE <<EOF
 # This file describes the network interfaces available on your system
 # and how to activate them. For more information, see interfaces(5).
+
+# Include interfaces configured in separate files
+source $IFACES_DIR/*.conf
+
 EOF
 }
 
@@ -69,7 +83,7 @@ EOF
 function interfaces-eth0 {
     # add eth0 to interfaces file
 
-    cat >> $IFACES_FILE <<EOF
+    cat > $IFACES_DIR/eth0.conf <<EOF
 # The primary network interface
 # creates a new network.
 auto eth0
@@ -83,7 +97,7 @@ EOF
 function interfaces-eth1 {
     # add eth1 to interfaces file
 
-    cat >> $IFACES_FILE <<EOF
+    cat > $IFACES_DIR/eth1.conf <<EOF
 # The secondary network interface
 # joins the existing network.
 auto eth1

@@ -17,8 +17,8 @@ then
 	modprobe -r mwifiex_sdio
 	modprobe mwifiex_sdio
 
-        echo "Adding uap0 to interfaces file."
-        cat >> /etc/network/interfaces <<EOF
+        echo "Setting up uap0 interface configuration..."
+        cat > /etc/network/interfaces.d/uap0.conf <<EOF
 # The wireless network interface
 # creates a new wireless network.
 auto uap0
