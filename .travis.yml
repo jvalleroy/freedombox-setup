@@ -1,0 +1,13 @@
+# Travis-CI configuration file for freedombox-setup
+
+language: bash
+
+# Debian package required
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -y debhelper python3-all libxml2-utils xmlto dblatex w3m zip libwww-perl
+  - wget http://ftp.us.debian.org/debian/pool/main/d/dh-python/dh-python_2.20150826_all.deb
+  - sudo dpkg -i dh-python_2.20150826_all.deb
+
+script:
+  - debuild -us -uc
